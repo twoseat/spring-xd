@@ -5,12 +5,18 @@ apply plugin: 'idea'
 
 buildscript {
 	repositories {
+		maven { url 'http://repo.spring.io/snapshot' }
+		maven { url 'http://repo.spring.io/milestone' }
+		maven { url 'http://repo.spring.io/release' }
+		maven { url "http://repo.spring.io/plugins-snapshot" }
+		maven { url "http://repo.spring.io/plugins-milestone" }
 		maven { url "http://repo.spring.io/plugins-release" }
 		jcenter()
 	}
 	dependencies {
-		classpath("org.springframework.boot:spring-boot-gradle-plugin:1.2.1.RELEASE")
-		classpath("org.springframework.build.gradle:propdeps-plugin:0.0.7")
+		classpath "org.springframework.boot:spring-boot-gradle-plugin:$springBootVersion"
+		classpath 'org.springframework.build.gradle:propdeps-plugin:0.0.7'
+		classpath 'io.spring.gradle:dependency-management-plugin:0.4.1.RELEASE'
 		classpath 'com.moowork.gradle:gradle-grunt-plugin:0.6'
 		classpath 'com.moowork.gradle:gradle-node-plugin:0.7'
 		classpath 'me.champeau.gradle:gradle-javadoc-hotfix-plugin:0.1'
@@ -95,10 +101,15 @@ allprojects {
 
 	repositories {
 		mavenCentral()
+		maven { url 'http://repo.spring.io/release' }
 		maven { url 'http://repo.spring.io/milestone' }
+		maven { url 'http://repo.spring.io/snapshot' }
+		maven { url 'http://repo.spring.io/libs-release' }
 		maven { url 'http://repo.spring.io/libs-milestone' }
 		maven { url 'http://repo.spring.io/libs-snapshot' }
 		maven { url 'http://repo.spring.io/plugins-release' }
+		maven { url 'http://repo.spring.io/plugins-milestone' }
+		maven { url 'http://repo.spring.io/plugins-snapshot' }
 		maven { url 'https://repo.eclipse.org/content/repositories/paho-releases' }
 	}
 }
@@ -159,9 +170,27 @@ configure(javaProjects) { subproject ->
 	apply plugin: 'propdeps-maven'
 	apply plugin: 'propdeps-idea'
 	apply plugin: 'propdeps-eclipse'
+	apply plugin: 'io.spring.dependency-management'
 
-	dependencies {
-		versionManagement files(rootProject.file('dependencies.properties'))
+	dependencyManagement {
+     imports {
+          mavenBom "org.springframework.boot:spring-boot-dependencies:$springBootVersion"
+     }
+
+		dependencies {
+					dependency "com.esotericsoftware:kryo-shaded:$kyroVersion"
+					dependency "com.jayway.jsonpath:json-path:$jsonPathVersion"
+					dependency "commons-logging:commons-logging:$commonsLoggingVersion"
+          dependencySet(group:'org.apache.directory.server', version: apacheDirectoryServerVersion) {
+               entry 'apacheds-core-entry'
+               entry 'apacheds-server-jndi'
+          }
+					dependencySet(group:'org.springframework.data', version: springDataHadoopVersion) {
+							entry 'spring-data-hadoop'
+							entry 'spring-data-hadoop-store'
+							entry 'spring-data-hadoop-test'
+					}
+     }
 	}
 
 	bootRepackage {
@@ -523,7 +552,7 @@ project('spring-xd-dirt') {
 		}
 		testCompile "org.springframework:spring-jms"
 		runtime "org.apache.httpcomponents:httpclient"
-		testCompile 'org.apache.directory.server:apacheds-server-jndi:1.5.7'
+		testCompile 'org.apache.directory.server:apacheds-server-jndi'
 
 	}
 
@@ -952,6 +981,7 @@ project('spring-xd-messagebus-redis') {
 	description = 'Spring XD MessageBus (Redis implementation)'
 	dependencies {
 		compile project(':spring-xd-messagebus-spi')
+		provided "commons-logging:commons-logging"
 		compile "org.springframework.integration:spring-integration-redis"
 	}
 }
@@ -1188,6 +1218,7 @@ project('spring-xd-batch') {
 
 	dependencies {
 		runtime "org.yaml:snakeyaml"
+		provided "commons-logging:commons-logging"
 		compile "org.hsqldb:hsqldb"
 		compile "org.springframework.boot:spring-boot-autoconfigure"
 		compile "org.springframework.boot:spring-boot-actuator"
@@ -1401,4 +1432,3 @@ idea.project.ipr {
 		provider.node.component.find { it.@name == 'VcsDirectoryMappings' }.mapping.@vcs = 'Git'
 	}
 }
-
